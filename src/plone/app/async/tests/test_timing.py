@@ -1,9 +1,9 @@
 import transaction
+from zope.component import getUtility
 from zc.async.testing import wait_for_result
-from plone.app.async import getQueues
 from plone.app.async.tests.base import AsyncTestCase
-from plone.app.async.jobs import queueSerialJobs, queueParallelJobs
-from plone.app.async.jobs import queueJob, queueJobInQueue
+from plone.app.async.interfaces import IAsyncService
+
 import time
 
 results = []
@@ -24,6 +24,9 @@ def job3(context):
 
 class TestTiming(AsyncTestCase):
 
+    def afterSetUp(self):
+        self.async = getUtility(IAsyncService)
+
     def test_timing_serial(self):
         """Tests whether the jobs are *really* performed serially.
         """
@@ -31,7 +34,7 @@ class TestTiming(AsyncTestCase):
         j1 = (job1, self.folder, (), {})
         j2 = (job2, self.folder, (), {})
         j3 = (job3, self.folder, (), {})
-        job = queueSerialJobs(j1,j2,j3)
+        job = self.async.queueSerialJobs(j1,j2,j3)
         transaction.commit()
         wait_for_result(job, seconds=20)
         self.assertEquals(results, [1, 2, 3])
@@ -43,7 +46,7 @@ class TestTiming(AsyncTestCase):
         j1 = (job1, self.folder, (), {})
         j2 = (job2, self.folder, (), {})
         j3 = (job3, self.folder, (), {})
-        job = queueParallelJobs(j1,j2,j3)
+        job = self.async.queueParallelJobs(j1,j2,j3)
         transaction.commit()
         wait_for_result(job, seconds=20)
         self.assertEquals(set(results), set([3, 2, 1]))
@@ -53,9 +56,9 @@ class TestTiming(AsyncTestCase):
         So, everything will be performed serialy.
         """
         results[:] = []
-        queueJob(job1, self.folder)
-        queueJob(job2, self.folder)
-        j3 = queueJob(job3, self.folder)
+        self.async.queueJob(job1, self.folder)
+        self.async.queueJob(job2, self.folder)
+        j3 = self.async.queueJob(job3, self.folder)
         transaction.commit()
         wait_for_result(j3, seconds=20)
         self.assertEquals(results, [1, 2, 3])
@@ -65,13 +68,13 @@ class TestTiming(AsyncTestCase):
         finish, 3 will start and finish, and then 1 will finish.
         """
         results[:] = []
-        queue = getQueues()['']
+        queue = self.async.getQueues()['']
         queue.quotas.create('size2', size=2)
-        j1 = queueJobInQueue(queue, ('size2',), job1, self.folder)
+        j1 = self.async.queueJobInQueue(queue, ('size2',), job1, self.folder)
         j1.quota_names = ('size2',)
-        j2 = queueJobInQueue(queue, ('size2',), job2, self.folder)
+        j2 = self.async.queueJobInQueue(queue, ('size2',), job2, self.folder)
         j2.quota_names = ('size2',)
-        j3 = queueJobInQueue(queue, ('size2',), job3, self.folder)
+        j3 = self.async.queueJobInQueue(queue, ('size2',), job3, self.folder)
         j3.quota_names = ('size2',)
         transaction.commit()
         wait_for_result(j1, seconds=20)

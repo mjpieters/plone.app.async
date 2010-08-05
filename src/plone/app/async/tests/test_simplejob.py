@@ -1,9 +1,11 @@
 import transaction
+from zope.component import getUtility
 from zc.async.testing import wait_for_result
 from Products.PloneTestCase.PloneTestCase import default_user
 from Products.CMFCore.utils import getToolByName
 from plone.app.async.tests.base import AsyncTestCase
-from plone.app.async.jobs import queueJob, queueJobInQueue, queueSerialJobs
+from plone.app.async.interfaces import IAsyncService
+# #from plone.app.async.jobs import queueJob, queueJobInQueue, queueSerialJobs
 
 
 def addNumbers(context, x1, x2):
@@ -27,7 +29,8 @@ def createDocumentAndPublish(context, anid, title, description, body):
     createDocument(context, anid, title, description, body)
     import zc.async
     q = zc.async.local.getJob().queue
-    job = queueJobInQueue(q,('default'), publishDocument, context, anid)
+    async = getUtility(IAsyncService)    
+    job = async.queueJobInQueue(q,('default'), publishDocument, context, anid)
     return job
 
 
@@ -38,12 +41,14 @@ def reindexDocument(context):
 class TestSimpleJob(AsyncTestCase):
     """
     """
+    def afterSetUp(self):
+        self.async = getUtility(IAsyncService)
 
     def test_add_job(self):
         """Tests adding a computational job and getting the result.
         """
         context = self.folder
-        job = queueJob(addNumbers, context, 40, 2)
+        job = self.async.queueJob(addNumbers, context, 40, 2)
         transaction.commit()
         self.assertEqual(job.status, u'pending-status')
         wait_for_result(job)
@@ -53,7 +58,7 @@ class TestSimpleJob(AsyncTestCase):
     def test_add_persistent(self):
         """Adding a job that creates persistent objects.
         """
-        job = queueJob(createDocument,
+        job = self.async.queueJob(createDocument,
             self.folder, 'anid', 'atitle', 'adescr', 'abody')
         transaction.commit()
         self.assertEqual(job.status, u'pending-status')
@@ -69,7 +74,7 @@ class TestSimpleJob(AsyncTestCase):
         """
         job1 = (createDocument, self.folder, ('anid2', 'atitle', 'adescr', 'abody'), {})
         job2 = (publishDocument, self.folder, ('anid2',), {})
-        job = queueSerialJobs(job1,job2)
+        job = self.async.queueSerialJobs(job1,job2)
         transaction.commit()
         wait_for_result(job)
         self.assertEqual(job.result[0].result, 'anid2')
@@ -85,7 +90,7 @@ class TestSimpleJob(AsyncTestCase):
         XXX: TO BE REVISITED!
         """
         return
-        job = queueJob(createDocumentAndPublish,
+        job = self.async.queueJob(createDocumentAndPublish,
             self.folder, 'anid3', 'atitle', 'adescr', 'abody')
         transaction.commit()
         wait_for_result(job)
@@ -105,7 +110,7 @@ class TestSimpleJob(AsyncTestCase):
         res = ct.searchResults(Description='bar')
         self.assertEqual(len(res), 0)
 
-        job = queueJob(reindexDocument, doc)
+        job = self.async.queueJob(reindexDocument, doc)
         transaction.commit()
         wait_for_result(job)
         res = ct.searchResults(Description='bar')
@@ -121,7 +126,7 @@ class TestSimpleJob(AsyncTestCase):
         res = ct.searchResults(Description='bar')
         self.assertEqual(len(res), 1)
 
-        job = queueJob(doc.__class__.reindexObject, doc)
+        job = self.async.queueJob(doc.__class__.reindexObject, doc)
         transaction.commit()
         wait_for_result(job)
         res = ct.searchResults(Description='bar')

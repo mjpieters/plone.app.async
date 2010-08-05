@@ -25,7 +25,7 @@ class AsyncLayer(PloneSite):
         provideHandler(notifyQueueReady, [IDispatcherActivated])
         provideHandler(configureQueue, [IQueueReady])
         event = DatabaseOpened(async_db)
-        threaded_dispatcher_installer.poll_interval = 0.2
+        threaded_dispatcher_installer.poll_interval = 0.5
         queue_installer(event)
         threaded_dispatcher_installer(event)
 

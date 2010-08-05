@@ -16,6 +16,19 @@ class IQueueReady(IObjectEvent):
     """Queue is ready"""
 
 
+class IAsyncService(interface.Interface):
+    """Utility
+    """
+
+    def queueJob():
+        """Queue a job.
+        """
+
+    def queueJobInQueue():
+        """Queue a job in a specific queue.
+        """
+
+
 class QueueReady(object):
     interface.implements(IQueueReady)
 

@@ -1,7 +1,9 @@
 import transaction
+from zope.component import getUtility
 from zc.async.testing import wait_for_result
 from plone.app.async.tests.base import AsyncTestCase
 from plone.app.async.jobs import queueJob
+from plone.app.async.interfaces import IAsyncService
 
 results = []
 
@@ -18,17 +20,19 @@ def job_failure_callback(result):
     results.append("Failure")
 
 class TestCallbacks(AsyncTestCase):
+    def afterSetUp(self):
+        self.async = getUtility(IAsyncService)
 
     def test_callback(self):
         results[:] = []
-        job = queueJob(job1, self.folder)
+        job = self.async.queueJob(job1, self.folder)
         job.addCallback(job_success_callback)
         transaction.commit()
         wait_for_result(job)        
         self.assertEquals(results, [1,"Success: 1"])
 
         results[:] = []
-        job = queueJob(job1, self.folder)
+        job = self.async.queueJob(job1, self.folder)
         job.addCallbacks(failure=job_failure_callback)
         job.addCallbacks(success=job_success_callback)
         transaction.commit()

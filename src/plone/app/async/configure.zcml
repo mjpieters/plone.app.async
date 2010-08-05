@@ -15,7 +15,10 @@
 
   <!-- default configuration -->
   <utility factory=".config.InitBase" />
-  
+
+  <utility provides=".interfaces.IAsyncService"
+      factory=".service.AsyncService" />
+
   <browser:page
     for="*"
     name="kaka"

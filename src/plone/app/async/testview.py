@@ -14,8 +14,8 @@ from zope.app.component.hooks import setSite
 
 from AccessControl.SecurityManagement import noSecurityManager, newSecurityManager
 import transaction
-from plone.app.async.jobs import queueJob
-from plone.app.async import getQueues
+#from plone.app.async.jobs import queueJob
+from plone.app.async.interfaces import IAsyncService
 
 def createDocument(context, anid, title, description, body):
     context.invokeFactory('Document', anid,
@@ -35,7 +35,8 @@ class TestView(formbase.PageForm):
     form_fields = form.Fields(IFFields)
 
     def testing(self):
-        job = queueJob(createDocument, self.context, 'anid2','atitle','adescr','abody')
+        async = getUtility(IAsyncService)
+        job = async.queueJob(createDocument, self.context, 'anid2','atitle','adescr','abody')
         return
 
     @form.action(u"Apply")

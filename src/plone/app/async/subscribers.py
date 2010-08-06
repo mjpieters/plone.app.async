@@ -1,24 +1,12 @@
 import logging
 import transaction
-from Acquisition import aq_base
 from zope.component import getUtility
 from zope.event import notify
-from zc.async.interfaces import IQueue
 from zc.async.interfaces import KEY
 from plone.app.async.interfaces import IAsyncDatabase
 from plone.app.async.interfaces import QueueReady
 
 logger = logging.getLogger('plone.app.async')
-
-
-def is_async_db(db):
-    async_db = getUtility(IAsyncDatabase)
-    return (aq_base(db) is aq_base(async_db))
-
-
-def is_in_async_db(object):
-    db = object._p_jar._db
-    return is_async_db(db)
 
 
 def set_quota(queue, quota_name, size):

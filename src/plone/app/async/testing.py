@@ -11,6 +11,7 @@ from zc.async.subscribers import queue_installer,\
     threaded_dispatcher_installer, agent_installer
 from zc.async.subscribers import ThreadedDispatcherInstaller
 from zc.async.interfaces import IDispatcherActivated
+from zc.async.testing import tear_down_dispatcher
 from collective.testcaselayer.ptc import BasePTCLayer, ptc_layer
 from collective.testcaselayer.sandbox import Sandboxed
 from plone.app.async.interfaces import IAsyncDatabase, IQueueReady
@@ -47,9 +48,7 @@ class AsyncLayer(BasePTCLayer):
         gsm.unregisterHandler(agent_installer, [IDispatcherActivated])
         dispatcher_object = dispatcher.get()
         if dispatcher_object is not None:
-            dispatcher_object.reactor.callFromThread(
-                dispatcher_object.reactor.stop)
-            dispatcher_object.thread.join(3)
+            tear_down_dispatcher(dispatcher_object)
 
 
 async = AsyncLayer(bases=[ptc_layer])
@@ -100,9 +99,8 @@ class AsyncSandboxed(Sandboxed):
         sbdispatcher = dispatcher.get(self._dispatch_uuid)
         # Transaction manager lost track of the database connection??
         transaction.manager.registerSynch(sbdispatcher.conn)
-        sbdispatcher.deactivate()
+        tear_down_dispatcher(sbdispatcher)
         dispatcher.pop(self._dispatch_uuid)
-        sbdispatcher.thread.join(0.5)
 
         # Un-register the demo storage
         gsm = component.getGlobalSiteManager()

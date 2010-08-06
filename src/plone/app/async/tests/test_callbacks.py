@@ -1,7 +1,7 @@
 import transaction
 from zope.component import getUtility
 from zc.async.testing import wait_for_result
-from plone.app.async.tests.base import AsyncTestCase
+from plone.app.async.testing import AsyncTestCase
 from plone.app.async.interfaces import IAsyncService
 
 results = []

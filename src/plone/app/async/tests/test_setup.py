@@ -1,8 +1,7 @@
 from zope.component import queryUtility, getUtility
 from zc.async import dispatcher
-from plone.app.async.interfaces import IAsyncDatabase
-from plone.app.async.tests.base import AsyncTestCase
-from plone.app.async.interfaces import IAsyncService
+from plone.app.async.interfaces import IAsyncDatabase, IAsyncService
+from plone.app.async.testing import AsyncTestCase
 
 
 class TestSetup(AsyncTestCase):

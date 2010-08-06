@@ -112,6 +112,7 @@ class AsyncSandboxed(PloneTestCase.Sandboxed):
         transaction.manager.registerSynch(sbdispatcher.conn)
         sbdispatcher.deactivate()
         dispatcher.pop(self._dispatch_uuid)
+        sbdispatcher.thread.join(0.5)
 
         # Un-register the demo storage
         gsm = component.getGlobalSiteManager()

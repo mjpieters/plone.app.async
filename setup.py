@@ -29,6 +29,7 @@ setup(name='plone.app.async',
           'zc.async',
           'zc.monitor',
           'zc.z3monitor',
+          'collective.testcaselayer'
           # -*- Extra requirements: -*-
       ],
       entry_points="""

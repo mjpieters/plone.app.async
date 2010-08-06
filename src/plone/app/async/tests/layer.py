@@ -1,4 +1,4 @@
-from zope.component import provideUtility, getGlobalSiteManager, provideHandler
+from zope import component
 from zope.app.appsetup.interfaces import DatabaseOpened
 from Testing import ZopeTestCase
 from Products.Five import zcml
@@ -22,10 +22,10 @@ class AsyncLayer(PloneSite):
         fiveconfigure.debug_mode = False
         
         async_db = ZopeTestCase.app()._p_jar._db
-        provideUtility(async_db, IAsyncDatabase)
-        provideHandler(agent_installer, [IDispatcherActivated])
-        provideHandler(notifyQueueReady, [IDispatcherActivated])
-        provideHandler(configureQueue, [IQueueReady])
+        component.provideUtility(async_db, IAsyncDatabase)
+        component.provideHandler(agent_installer, [IDispatcherActivated])
+        component.provideHandler(notifyQueueReady, [IDispatcherActivated])
+        component.provideHandler(configureQueue, [IQueueReady])
         event = DatabaseOpened(async_db)
         threaded_dispatcher_installer.poll_interval = 0.5
         queue_installer(event)
@@ -33,8 +33,8 @@ class AsyncLayer(PloneSite):
 
     @classmethod
     def tearDown(cls):
-        async_db = getGlobalSiteManager().getUtility(IAsyncDatabase)
-        gsm = getGlobalSiteManager()
+        gsm = component.getGlobalSiteManager()
+        async_db = gsm.getUtility(IAsyncDatabase)
         gsm.unregisterUtility(async_db, IAsyncDatabase)
         gsm.unregisterHandler(agent_installer, [IDispatcherActivated])
         dispatcher_object = dispatcher.get()

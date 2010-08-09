@@ -3,7 +3,7 @@ from zope.component import getUtility
 from zc.async.testing import wait_for_result
 from Products.PloneTestCase.PloneTestCase import default_user
 from Products.CMFCore.utils import getToolByName
-from plone.app.async.testing import AsyncTestCase
+from plone.app.async.tests.base import AsyncTestCase
 from plone.app.async.interfaces import IAsyncService
 from plone.app.async.service import makeJob
 
@@ -43,9 +43,6 @@ def reindexDocument(context):
 class TestSimpleJob(AsyncTestCase):
     """
     """
-
-    def afterSetUp(self):
-        self.async = getUtility(IAsyncService)
 
     def test_add_job(self):
         """Tests adding a computational job and getting the result.

@@ -1,8 +1,6 @@
 import transaction
-from zope.component import getUtility
 from zc.async.testing import wait_for_result
-from plone.app.async.testing import AsyncTestCase
-from plone.app.async.interfaces import IAsyncService
+from plone.app.async.tests.base import AsyncTestCase
 
 import time
 
@@ -23,9 +21,6 @@ def job3(context):
 
 
 class TestTiming(AsyncTestCase):
-
-    def afterSetUp(self):
-        self.async = getUtility(IAsyncService)
 
     def test_timing_serial(self):
         """Tests whether the jobs are *really* performed serially.

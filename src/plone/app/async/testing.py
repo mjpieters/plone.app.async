@@ -16,11 +16,7 @@ from collective.testcaselayer.ptc import BasePTCLayer, ptc_layer
 from collective.testcaselayer.sandbox import Sandboxed
 from plone.app.async.interfaces import IAsyncDatabase, IQueueReady, IAsyncService
 from plone.app.async.subscribers import notifyQueueReady, configureQueue
-from Products.PloneTestCase import PloneTestCase
-from Products.Five.testbrowser import Browser
 
-
-PloneTestCase.setupPloneSite()
 
 def cleanUpQuotas():
     """Reset quotas between tests.
@@ -125,31 +121,3 @@ class AsyncSandboxed(Sandboxed):
 
         # Re-activate the layer dispatcher
         dispatcher.get().activated = datetime.datetime.now()
-
-
-class AsyncTestCase(AsyncSandboxed, PloneTestCase.PloneTestCase):
-    """We use this base class for all the tests in this package.
-    """
-    layer = async_layer
-
-    def afterSetUp(self):
-        # Clean up any existing quotas from previously failing jobs.
-        cleanUpQuotas()
-
-
-class FunctionalAsyncTestCase(PloneTestCase.Functional, AsyncTestCase):
-    """For functional tests.
-    """
-    layer = async_layer
-
-    def getCredentials(self):
-        return '%s:%s' % (PloneTestCase.default_user,
-            PloneTestCase.default_password)
-
-    def getBrowser(self, loggedIn=True):
-        """ instantiate and return a testbrowser for convenience """
-        browser = Browser()
-        if loggedIn:
-            auth = 'Basic %s' % self.getCredentials()
-            browser.addHeader('Authorization', auth)
-        return browser

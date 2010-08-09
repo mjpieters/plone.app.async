@@ -61,7 +61,7 @@ class AsyncLayer(BasePTCLayer):
             tear_down_dispatcher(dispatcher_object)
 
 
-async = AsyncLayer(bases=[ptc_layer])
+async_layer = AsyncLayer(bases=[ptc_layer])
 
 
 class AsyncSandboxed(Sandboxed):
@@ -130,7 +130,7 @@ class AsyncSandboxed(Sandboxed):
 class AsyncTestCase(AsyncSandboxed, PloneTestCase.PloneTestCase):
     """We use this base class for all the tests in this package.
     """
-    layer = async
+    layer = async_layer
 
     def afterSetUp(self):
         # Clean up any existing quotas from previously failing jobs.
@@ -140,7 +140,7 @@ class AsyncTestCase(AsyncSandboxed, PloneTestCase.PloneTestCase):
 class FunctionalAsyncTestCase(PloneTestCase.Functional, AsyncTestCase):
     """For functional tests.
     """
-    layer = async
+    layer = async_layer
 
     def getCredentials(self):
         return '%s:%s' % (PloneTestCase.default_user,

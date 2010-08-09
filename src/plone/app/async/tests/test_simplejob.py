@@ -5,7 +5,7 @@ from Products.PloneTestCase.PloneTestCase import default_user
 from Products.CMFCore.utils import getToolByName
 from plone.app.async.testing import AsyncTestCase
 from plone.app.async.interfaces import IAsyncService
-
+from plone.app.async.service import makeJob
 
 def addNumbers(context, x1, x2):
     return x1+x2
@@ -96,6 +96,34 @@ class TestSimpleJob(AsyncTestCase):
         self.assertEqual(job.result, 'workflow_change')
         doc = self.folder['anid3']
         wt = getToolByName(self.folder, 'portal_workflow')
+        self.assertEqual(wt.getInfoFor(doc, 'review_state'), 'pending')
+
+    def test_serial_jobs3(self):
+        """Mix queueJob and queueSerialJobs.
+        """
+        job = self.async.queueJob(createDocument, self.folder, 'anid', 'atitle', 'adescr', 'abody')
+        self.assertEqual(job.quota_names, ('default',))
+
+        job2 = self.async.queueSerialJobs(
+            makeJob(publishDocument, self.folder, 'anid'),
+            makeJob(createDocument, self.folder, 'anotherid', 'atitle', 'adescr', 'abody'),
+        )
+        self.assertEqual(job2.quota_names, ('default',))
+
+        job3 = self.async.queueJob(publishDocument, self.folder, 'anotherid')
+        self.assertEqual(job3.quota_names, ('default',))
+        transaction.commit()
+        wait_for_result(job3)
+
+        self.assertEqual(job.result, 'anid')
+        self.assertEqual(job2.result[0].result, 'workflow_change')
+        self.assertEqual(job2.result[1].result, 'anotherid')
+        self.assertEqual(job3.result, 'workflow_change')
+
+        wt = getToolByName(self.folder, 'portal_workflow')
+        doc = self.folder['anid']
+        self.assertEqual(wt.getInfoFor(doc, 'review_state'), 'pending')
+        doc = self.folder['anotherid']
         self.assertEqual(wt.getInfoFor(doc, 'review_state'), 'pending')
 
     def test_indexing(self):

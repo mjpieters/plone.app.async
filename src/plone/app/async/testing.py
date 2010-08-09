@@ -14,7 +14,7 @@ from zc.async.interfaces import IDispatcherActivated
 from zc.async.testing import tear_down_dispatcher
 from collective.testcaselayer.ptc import BasePTCLayer, ptc_layer
 from collective.testcaselayer.sandbox import Sandboxed
-from plone.app.async.interfaces import IAsyncDatabase, IQueueReady
+from plone.app.async.interfaces import IAsyncDatabase, IQueueReady, IAsyncService
 from plone.app.async.subscribers import notifyQueueReady, configureQueue
 from Products.PloneTestCase import PloneTestCase
 from Products.Five.testbrowser import Browser
@@ -22,6 +22,16 @@ from Products.Five.testbrowser import Browser
 
 PloneTestCase.setupPloneSite()
 
+def cleanUpQuotas():
+    """Reset quotas between tests.
+
+    'job never completed' errors may leave uncollectable jobs in quotas.
+    """
+    transaction.commit()
+    service = component.getUtility(IAsyncService)
+    queue = service.getQueues()['']
+    for quota in queue.quotas.values():
+        queue.quotas.create(quota.name, quota.size)
 
 class AsyncLayer(BasePTCLayer):
 
@@ -121,6 +131,10 @@ class AsyncTestCase(AsyncSandboxed, PloneTestCase.PloneTestCase):
     """We use this base class for all the tests in this package.
     """
     layer = async
+
+    def afterSetUp(self):
+        # Clean up any existing quotas from previously failing jobs.
+        cleanUpQuotas()
 
 
 class FunctionalAsyncTestCase(PloneTestCase.Functional, AsyncTestCase):

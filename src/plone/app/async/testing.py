@@ -1,6 +1,6 @@
 import datetime
 import transaction
-import uuid
+from uuid import uuid1
 from zope import component
 from zope.app.appsetup.interfaces import DatabaseOpened
 from Testing import ZopeTestCase
@@ -29,6 +29,7 @@ def cleanUpQuotas():
     for quota in queue.quotas.values():
         queue.quotas.create(quota.name, quota.size)
 
+
 class AsyncLayer(BasePTCLayer):
 
     def afterSetUp(self):
@@ -36,8 +37,8 @@ class AsyncLayer(BasePTCLayer):
         import plone.app.async
         zcml.load_config('configure.zcml', plone.app.async)
         fiveconfigure.debug_mode = False
-        
-        async_db = ZopeTestCase.app()._p_jar._db
+
+        async_db = ZopeTestCase.app()._p_jar.db()
         component.provideUtility(async_db, IAsyncDatabase)
         component.provideHandler(agent_installer, [IDispatcherActivated])
         component.provideHandler(notifyQueueReady, [IDispatcherActivated])
@@ -71,53 +72,40 @@ class AsyncSandboxed(Sandboxed):
         installed.
     '''
 
-    _layer_db = None
-    _dispatch_uuid = None
-
     def _app(self):
         '''Returns the app object for a test.'''
         # Store an already registered async database (from the testlayer)
         # for later restoration
-        self._layer_db = component.getUtility(IAsyncDatabase)
-        gsm = component.getGlobalSiteManager()
-        gsm.unregisterUtility(self._layer_db, IAsyncDatabase)
-
-        # Deactivate the layer dispatcher
-        dispatcher.get().activated = False
+        self.layer_db = component.getUtility(IAsyncDatabase)
 
         # DemoStorage connection and friends
         app = super(AsyncSandboxed, self)._app()
 
         # Register the demostorage as the current async db
-        async_db = app._p_jar._db
+        async_db = app._p_jar.db()
         component.provideUtility(async_db, IAsyncDatabase)
 
         # Create a async dispatcher for this sandbox
-        self._dispatch_uuid = sb_uuid = uuid.uuid1()
+        self.dispatcher_uuid = uuid = uuid1()
         event = DatabaseOpened(async_db)
-        ThreadedDispatcherInstaller(poll_interval=0.5, uuid=sb_uuid)(event)
+        ThreadedDispatcherInstaller(poll_interval=0.5, uuid=uuid)(event)
 
         return app
 
     def _close(self):
         '''Clears the transaction and the AppZapper.'''
         # Clear the dispatcher
-        sbdispatcher = dispatcher.get(self._dispatch_uuid)
+        sbdispatcher = dispatcher.get(self.dispatcher_uuid)
         # Transaction manager lost track of the database connection??
         transaction.manager.registerSynch(sbdispatcher.conn)
         tear_down_dispatcher(sbdispatcher)
-        dispatcher.pop(self._dispatch_uuid)
-
-        # Un-register the demo storage
-        gsm = component.getGlobalSiteManager()
-        async_db = gsm.getUtility(IAsyncDatabase)
-        gsm.unregisterUtility(async_db, IAsyncDatabase)
+        dispatcher.pop(self.dispatcher_uuid)
 
         # Demostorage cleanup (and such)
         super(AsyncSandboxed, self)._close()
 
         # re-instate the underlying (layer) storage as the async db.
-        component.provideUtility(self._layer_db, IAsyncDatabase)
+        component.provideUtility(self.layer_db, IAsyncDatabase)
 
         # Re-activate the layer dispatcher
         dispatcher.get().activated = datetime.datetime.now()

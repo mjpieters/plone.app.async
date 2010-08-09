@@ -5,7 +5,6 @@ from Products.PloneTestCase.PloneTestCase import default_user
 from Products.CMFCore.utils import getToolByName
 from plone.app.async.testing import AsyncTestCase
 from plone.app.async.interfaces import IAsyncService
-# #from plone.app.async.jobs import queueJob, queueJobInQueue, queueSerialJobs
 
 
 def addNumbers(context, x1, x2):
@@ -26,11 +25,14 @@ def publishDocument(context, doc_id):
 
 
 def createDocumentAndPublish(context, anid, title, description, body):
+    async = getUtility(IAsyncService)
     createDocument(context, anid, title, description, body)
+    transaction.commit()
+    #Get the local queue
     import zc.async
-    q = zc.async.local.getJob().queue
-    async = getUtility(IAsyncService)    
-    job = async.queueJobInQueue(q,('default'), publishDocument, context, anid)
+    queue = zc.async.local.getQueue()
+    #Use a different (not default) quota
+    job = async.queueJobInQueue(queue, (), publishDocument, context, anid)
     return job
 
 
@@ -41,6 +43,7 @@ def reindexDocument(context):
 class TestSimpleJob(AsyncTestCase):
     """
     """
+
     def afterSetUp(self):
         self.async = getUtility(IAsyncService)
 
@@ -83,13 +86,9 @@ class TestSimpleJob(AsyncTestCase):
         wt = getToolByName(self.folder, 'portal_workflow')
         self.assertEqual(wt.getInfoFor(doc, 'review_state'), 'pending')
 
-
     def test_serial_jobs2(self):
         """Queue a job that queues another job.
-        XXX: THIS TEST WILL NOT PASS. Probably to do with threading.local
-        XXX: TO BE REVISITED!
         """
-        return
         job = self.async.queueJob(createDocumentAndPublish,
             self.folder, 'anid3', 'atitle', 'adescr', 'abody')
         transaction.commit()
@@ -106,7 +105,7 @@ class TestSimpleJob(AsyncTestCase):
             title='Foo', description='Foo', text='foo')
         doc = self.folder['anid4']
         doc.setDescription('bar')
-        ct = getToolByName(self.folder, 'portal_catalog')        
+        ct = getToolByName(self.folder, 'portal_catalog')
         res = ct.searchResults(Description='bar')
         self.assertEqual(len(res), 0)
 

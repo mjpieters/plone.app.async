@@ -12,10 +12,6 @@ class IAsyncDatabase(interface.Interface):
     """ zc.async database """
 
 
-class IQueueReady(IObjectEvent):
-    """Queue is ready"""
-
-
 class IAsyncService(interface.Interface):
     """Utility
     """
@@ -29,8 +25,33 @@ class IAsyncService(interface.Interface):
         """
 
 
+class IQueueReady(IObjectEvent):
+    """Queue is ready"""
+
+
 class QueueReady(object):
     interface.implements(IQueueReady)
+
+    def __init__(self, object):
+        self.object = object
+
+class IJobSuccess(IObjectEvent):
+    """Job was completed successfully"""
+
+
+class JobSuccess(object):
+    interface.implements(IJobSuccess)
+
+    def __init__(self, object):
+        self.object = object
+
+
+class IJobFailure(IObjectEvent):
+    """Job has failed"""
+
+
+class JobFailure(object):
+    interface.implements(IJobFailure)
 
     def __init__(self, object):
         self.object = object

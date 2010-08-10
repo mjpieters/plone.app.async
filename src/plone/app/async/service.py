@@ -1,5 +1,6 @@
 from zope.component import getUtility
 from zope.interface import implements
+from zope.event import notify
 from zope.app.component.hooks import setSite
 from AccessControl.SecurityManagement import noSecurityManager,\
     newSecurityManager
@@ -7,7 +8,7 @@ from Products.CMFCore.interfaces import ISiteRoot
 from Products.CMFCore.utils import getToolByName
 from zc.async.interfaces import KEY
 from zc.async.job import serial, parallel, Job
-from plone.app.async.interfaces import IAsyncService
+from plone.app.async.interfaces import IAsyncService, JobSuccess, JobFailure
 
 
 def makeJob(func, context, *args, **kwargs):
@@ -51,6 +52,16 @@ def _executeAsUser(portal_path, context_path, user_id, func, *args, **kwargs):
     return result
 
 
+def job_success_callback(result):
+    ev = JobSuccess(result)
+    notify(ev)
+
+
+def job_failure_callback(result):
+    ev = JobFailure(result)
+    notify(ev)
+
+
 class AsyncService(object):
     implements(IAsyncService)
 
@@ -72,6 +83,8 @@ class AsyncService(object):
         if quota:
             job.quota_names = quota
         job = queue.put(job)
+        job.addCallbacks(success=job_success_callback,
+                         failure=job_failure_callback)
         return job
 
     def _queueJobsInQueue(self, queue, quota_names, job_infos, serialize=True):
@@ -92,6 +105,8 @@ class AsyncService(object):
         if quota_names:
             job.quota_names = quota_names
         job = queue.put(job)
+        job.addCallbacks(success=job_success_callback,
+                         failure=job_failure_callback)
         return job
 
     def queueSerialJobsInQueue(self, queue, quota_names, *job_infos):
@@ -107,3 +122,4 @@ class AsyncService(object):
     def queueParallelJobs(self, *job_infos):
         queue = self.getQueues()['']
         return self.queueParallelJobsInQueue(queue, ('default',), *job_infos)
+

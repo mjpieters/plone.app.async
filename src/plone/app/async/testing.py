@@ -1,4 +1,5 @@
 import datetime
+import time
 import transaction
 from uuid import uuid1
 from zope import component
@@ -10,7 +11,7 @@ from zc.async import dispatcher
 from zc.async.subscribers import queue_installer,\
     threaded_dispatcher_installer, agent_installer
 from zc.async.subscribers import ThreadedDispatcherInstaller
-from zc.async.interfaces import IDispatcherActivated
+from zc.async.interfaces import IDispatcherActivated, COMPLETED
 from zc.async.testing import tear_down_dispatcher
 from collective.testcaselayer.ptc import BasePTCLayer, ptc_layer
 from collective.testcaselayer.sandbox import Sandboxed
@@ -109,3 +110,22 @@ class AsyncSandboxed(Sandboxed):
 
         # Re-activate the layer dispatcher
         dispatcher.get().activated = datetime.datetime.now()
+
+
+#
+# Utility Functions
+#
+
+def wait_until_all_jobs_complete(seconds=10):
+    """Wait for all jobs in the queue to be complete"""
+    queue = component.getUtility(IAsyncService).getQueues()['']
+    for i in range(seconds * 10):
+        transaction.begin()
+        for job in queue:
+            if job.status != COMPLETED:
+                break
+        else:
+            break
+        time.sleep(0.1)
+    else:
+        assert False, 'Jobs never completed'

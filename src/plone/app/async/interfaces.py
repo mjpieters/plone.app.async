@@ -13,15 +13,40 @@ class IAsyncDatabase(interface.Interface):
 
 
 class IAsyncService(interface.Interface):
-    """Utility
-    """
+    """Utility"""
 
-    def queueJob():
-        """Queue a job.
+    def queueJob(func, context, *args, **kwargs):
+        """Queue a job."""
+
+    def queueSerialJobs(*job_infos):
+        """Queue several jobs, to be run serially
+
+        job_info is a tuple with (func, context, args, kwargs).
+
         """
 
-    def queueJobInQueue():
-        """Queue a job in a specific queue.
+    def queueParallelJobs(*job_infos):
+        """Queue several jobs, to be run in parallel
+
+        job_info is a tuple with (func, context, args, kwargs).
+
+        """
+
+    def queueJobInQueue(queue, quota, func, context, *args, **kwargs):
+        """Queue a job in a specific queue."""
+
+    def queueSerialJobsInQueue(queue, quota_names, *job_infos):
+        """Queue several jobs in a specific queue, to be run serially
+
+        job_info is a tuple with (func, context, args, kwargs).
+
+        """
+
+    def queueParallelJobsInQueue(queue, quota_names, *job_infos):
+        """Queue several jobs in a specific queue, to be run in parallel
+
+        job_info is a tuple with (func, context, args, kwargs).
+
         """
 
 

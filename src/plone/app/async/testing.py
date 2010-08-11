@@ -121,10 +121,8 @@ def wait_until_all_jobs_complete(seconds=10):
     queue = component.getUtility(IAsyncService).getQueues()['']
     for i in range(seconds * 10):
         transaction.begin()
-        for job in queue:
-            if job.status != COMPLETED:
-                break
-        else:
+        incomplete = [j for j in queue if j.status != COMPLETED]
+        if not incomplete:
             break
         time.sleep(0.1)
     else:

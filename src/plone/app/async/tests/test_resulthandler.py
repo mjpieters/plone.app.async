@@ -13,7 +13,7 @@ def successJob(context):
 
 
 def failureJob(context):
-    raise Exception("FooBar")
+    raise RuntimeError("FooBar")
 
 
 def successHandler(event):
@@ -49,8 +49,9 @@ class TestResultHandler(AsyncTestCase):
         job = self.async.queueJob(failureJob, self.folder)
         transaction.commit()
         wait_for_result(job)
-        self.assertEquals(events[0].object.type, 'exceptions.Exception')
-        self.assertEquals(events[0].object.value, 'FooBar')
+        result = events[0].object
+        self.assertEquals(str(result.type), 'exceptions.RuntimeError')
+        self.assertEquals(str(result.value), 'FooBar')
 
 
 def test_suite():

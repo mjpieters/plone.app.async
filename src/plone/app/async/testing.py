@@ -79,6 +79,9 @@ class AsyncSandboxed(Sandboxed):
         # for later restoration
         self.layer_db = component.getUtility(IAsyncDatabase)
 
+        # Deactivate the layer dispatcher
+        dispatcher.get().activated = False
+
         # DemoStorage connection and friends
         app = super(AsyncSandboxed, self)._app()
 
@@ -110,6 +113,9 @@ class AsyncSandboxed(Sandboxed):
 
         # Re-activate the layer dispatcher
         dispatcher.get().activated = datetime.datetime.now()
+
+    def getAsyncDispatcher(self):
+        return dispatcher.get(self.dispatcher_uuid)
 
 
 #

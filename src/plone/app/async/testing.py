@@ -67,6 +67,7 @@ def wait_for_all_jobs(assert_successfull=True, seconds=10):
     for i in range(seconds * 10):
         transaction.begin()
         incomplete = [j for j in queue if j.status != COMPLETED]
+        if not incomplete:
             break
         if assert_successfull:
             errors = [j.result for j in queue if isinstance(j.result, Failure)]

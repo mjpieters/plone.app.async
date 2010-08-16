@@ -1,5 +1,4 @@
 import time
-import transaction
 from zope import component
 from zope.app.appsetup.interfaces import DatabaseOpened
 from Products.Five import zcml
@@ -8,7 +7,7 @@ from zc.async import dispatcher
 from zc.async.subscribers import queue_installer,\
     threaded_dispatcher_installer, agent_installer
 from zc.twist import Failure
-from zc.async.interfaces import IDispatcherActivated, COMPLETED
+from zc.async.interfaces import IDispatcherActivated
 from zc.async.testing import tear_down_dispatcher
 from collective.testcaselayer.ptc import BasePTCLayer, ptc_layer
 from collective.testcaselayer.sandbox import Sandboxed
@@ -63,7 +62,6 @@ class AsyncSandbox(Sandboxed):
 
 def wait_for_all_jobs(assert_successfull=True, seconds=10):
     """Wait for all jobs in the queue to complete"""
-    from zc.twist import Failure
     queue = component.getUtility(IAsyncService).getQueues()['']
     for job in queue:
         from zc.async.testing import wait_for_result

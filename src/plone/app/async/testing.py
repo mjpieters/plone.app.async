@@ -50,6 +50,9 @@ class AsyncSandbox(Sandboxed):
         event = DatabaseOpened(async_db)
         threaded_dispatcher_installer.poll_interval = 0.2
         threaded_dispatcher_installer(event)
+        # XXX The dispatcher will need to setup the queue and quotas.
+        # so let's give him some time...
+        time.sleep(0.1)
 
     def beforeTearDown(self):
         dispatcher_object = dispatcher.get()

@@ -63,15 +63,10 @@ class AsyncSandbox(Sandboxed):
 
 def wait_for_all_jobs(assert_successfull=True, seconds=10):
     """Wait for all jobs in the queue to complete"""
-    for i in range(seconds * 10):
-        transaction.begin()
-        queue = component.getUtility(IAsyncService).getQueues()['']
-        incomplete = [j for j in queue if j.status != COMPLETED]
-        if not incomplete:
-            if assert_successfull:
-                errors = [j.result for j in queue if isinstance(j.result, Failure)]
-                assert errors == [], [str(err) for err in errors]
-            break
-        time.sleep(0.1)
-    else:
-        assert False, 'Jobs never completed'
+    from zc.twist import Failure
+    queue = component.getUtility(IAsyncService).getQueues()['']
+    for job in queue:
+        from zc.async.testing import wait_for_result
+        wait_for_result(job)
+        if assert_successfull:
+            assert not isinstance(job.result, Failure), str(job.result)

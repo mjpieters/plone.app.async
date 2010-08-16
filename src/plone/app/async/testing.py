@@ -59,12 +59,11 @@ class AsyncSandbox(Sandboxed):
         tear_down_dispatcher(dispatcher_object)
         dispatcher.pop(dispatcher_object.UUID)
 
-
-def wait_for_all_jobs(assert_successfull=True, seconds=6):
-    """Wait for all jobs in the queue to complete"""
-    queue = component.getUtility(IAsyncService).getQueues()['']
-    for job in queue:
-        from zc.async.testing import wait_for_result
-        wait_for_result(job, seconds)
-        if assert_successfull:
-            assert not isinstance(job.result, Failure), str(job.result)
+    def wait_for_all_jobs(self, assert_successfull=True, seconds=6):
+        """Wait for all jobs in the queue to complete"""
+        queue = component.getUtility(IAsyncService).getQueues()['']
+        for job in queue:
+            from zc.async.testing import wait_for_result
+            wait_for_result(job, seconds)
+            if assert_successfull:
+                assert not isinstance(job.result, Failure), str(job.result)

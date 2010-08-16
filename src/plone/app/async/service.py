@@ -13,13 +13,14 @@ from plone.app.async.interfaces import IAsyncService, JobSuccess, JobFailure
 
 
 def makeJob(func, context, *args, **kwargs):
-    """Return a job info tuple."""
+    """Return a job_info tuple."""
     return (func, context, args, kwargs)
 
 
 def _executeAsUser(portal_path, context_path, user_id, func, *args, **kwargs):
     import Zope2
     transaction = Zope2.zpublisher_transactions_manager # Supports isDoomed
+
     transaction.begin()
     app = Zope2.app()
     success = False
@@ -71,23 +72,23 @@ class AsyncService(object):
         portal = getUtility(ISiteRoot)
         return portal._p_jar.root()[KEY]
 
-    def queueJob(self, func, context, *args, **kwargs):
-        queue = self.getQueues()['']
-        return self.queueJobInQueue(queue, ('default',), func, context, *args, **kwargs)
-
-    def queueJobInQueue(self, queue, quota, func, context, *args, **kwargs):
+    def queueJobInQueue(self, queue, quota_names, func, context, *args, **kwargs):
         pm = getToolByName(context, 'portal_membership')
         user_id = pm.getAuthenticatedMember().getId()
         portal_path = getUtility(ISiteRoot).getPhysicalPath()
         context_path = context.getPhysicalPath()
         job = Job(_executeAsUser, portal_path, context_path, user_id,
                   func, *args, **kwargs)
-        if quota:
-            job.quota_names = quota
+        if quota_names:
+            job.quota_names = quota_names
         job = queue.put(job)
         job.addCallbacks(success=job_success_callback,
                          failure=job_failure_callback)
         return job
+
+    def queueJob(self, func, context, *args, **kwargs):
+        queue = self.getQueues()['']
+        return self.queueJobInQueue(queue, ('default',), func, context, *args, **kwargs)
 
     def _queueJobsInQueue(self, queue, quota_names, job_infos, serialize=True):
         portal = getUtility(ISiteRoot)

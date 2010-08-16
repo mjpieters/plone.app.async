@@ -1,23 +1,33 @@
 from setuptools import setup, find_packages
 import os
 
+name = 'plone.app.async'
 version = '0.1'
+user_doc = open(
+    os.path.join("src", "plone", "app", "async", "README.txt")).read()
 
-setup(name='plone.app.async',
+setup(name=name,
       version=version,
       description="Integration package for zc.async",
       long_description=open("README.txt").read() + "\n" +
+                       user_doc + "\n" +
                        open(os.path.join("docs", "HISTORY.txt")).read(),
       # Get more strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
       classifiers=[
-        "Framework :: Plone",
-        "Programming Language :: Python",
+          'Environment :: Web Environment',
+          'Framework :: Plone',
+          'Intended Audience :: Developers',
+          'License :: OSI Approved :: GNU General Public License (GPL)',
+          'Operating System :: OS Independent',
+          'Programming Language :: Python',
+          'Topic :: Software Development :: Libraries :: Python Modules',
         ],
-      keywords='',
-      author='',
-      author_email='',
-      url='http://svn.plone.org/svn/collective/',
-      license='GPL',
+      keywords='plone, async, asynchronous',
+      author='Plone Foundation',
+      author_email='plone-developers@lists.sourceforge.net',
+      url='http://plone.org/products/plone.app.async',
+      download_url = 'http://pypi.python.org/pypi/plone.app.async/',
+      license='GPL version 2',
       packages=find_packages('src'),
       package_dir = {'': 'src'},
       namespace_packages=['plone', 'plone.app'],
@@ -33,8 +43,6 @@ setup(name='plone.app.async',
           # -*- Extra requirements: -*-
       ],
       entry_points="""
-      # -*- Entry points: -*-
-
       [z3c.autoinclude.plugin]
       target = plone
       """,

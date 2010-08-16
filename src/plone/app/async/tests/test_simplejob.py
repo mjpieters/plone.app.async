@@ -7,6 +7,7 @@ from plone.app.async.tests.base import AsyncTestCase
 from plone.app.async.interfaces import IAsyncService
 from plone.app.async.service import makeJob
 
+
 def addNumbers(context, x1, x2):
     return x1+x2
 
@@ -28,10 +29,10 @@ def createDocumentAndPublish(context, anid, title, description, body):
     async = getUtility(IAsyncService)
     createDocument(context, anid, title, description, body)
     transaction.commit()
-    #Get the local queue
+    # Get the local queue
     import zc.async
     queue = zc.async.local.getQueue()
-    #Use a different (not default) quota
+    # Must not use a quota here!
     job = async.queueJobInQueue(queue, (), publishDocument, context, anid)
     return job
 

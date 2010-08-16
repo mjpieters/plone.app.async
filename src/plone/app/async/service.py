@@ -28,7 +28,8 @@ def _executeAsUser(portal_path, context_path, user_id, func, *args, **kwargs):
     try:
         portal = app.unrestrictedTraverse(portal_path, None)
         if portal is None:
-            raise BadRequest('Portal path %s not found' % portal_path)
+            raise BadRequest(
+                'Portal path %s not found' % '/'.join(portal_path))
         setSite(portal)
 
         acl_users = getToolByName(portal, 'acl_users')
@@ -41,7 +42,8 @@ def _executeAsUser(portal_path, context_path, user_id, func, *args, **kwargs):
 
         context = portal.unrestrictedTraverse(context_path, None)
         if context is None:
-            raise BadRequest('Context path %s not found' % context_path)
+            raise BadRequest(
+                'Context path %s not found' % '/'.join(context_path))
         result = func(context, *args, **kwargs)
         transaction.commit()
         success = True

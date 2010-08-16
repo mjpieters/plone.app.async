@@ -28,16 +28,14 @@ Let's define a simple function to be executed asynchronously:
 
 and queue it:
 
-#    >>> import transaction
-#    >>> t = transaction.begin()
-#    >>> job = asyncService.queueJob(addNumbers, self.folder, 40, 2)
-#    >>> len(queue)
-#    1
-#    >>> t.commit()
+    >>> job = asyncService.queueJob(addNumbers, self.folder, 40, 2)
+    >>> len(queue)
+    1
+    >>> import transaction
+    >>> transaction.commit()
 
 For the sake of the test we should wait for the job to complete:
 
-#    >>> from zc.async.testing import wait_for_result
-#    >>> wait_for_result(job)
-#    >>> job.result
-#    42
+    >>> from zc.async.testing import wait_for_result
+    >>> wait_for_result(job)
+    42

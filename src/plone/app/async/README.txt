@@ -21,6 +21,19 @@ You can already get the zc.async queues:
     >>> queue
     <zc.async.queue.Queue object at ...>
 
+Make sure that the dispatcher sees the same db:
+
+    >>> import transaction
+    >>> from zc.async.testing import wait_for_result
+    >>> def dbUsed(context):
+    ...     return str(context._p_jar.db())
+    >>> job = asyncService.queueJob(dbUsed, self.folder)
+    >>> transaction.commit()
+    >>> disp_db = wait_for_result(job)
+    >>> disp_db == str(self.folder._p_jar.db())
+    True
+
+
 Let's define a simple function to be executed asynchronously:
 
     >>> def addNumbers(context, x1, x2):
@@ -31,11 +44,9 @@ and queue it:
     >>> job = asyncService.queueJob(addNumbers, self.folder, 40, 2)
     >>> len(queue)
     1
-    >>> import transaction
     >>> transaction.commit()
 
 For the sake of the test we should wait for the job to complete:
 
-    >>> from zc.async.testing import wait_for_result
     >>> wait_for_result(job)
     42

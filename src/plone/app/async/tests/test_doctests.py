@@ -16,7 +16,7 @@ def tearDown(test):
 
 
 def test_suite():
-    suite = ZopeTestCase.FunctionalDocFileSuite(
+    suite = ZopeTestCase.ZopeDocFileSuite(
             'README.txt', package='plone.app.async',
             test_class=FunctionalAsyncTestCase,
             setUp=setUp, tearDown=tearDown,

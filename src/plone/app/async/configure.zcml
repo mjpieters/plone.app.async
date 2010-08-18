@@ -19,11 +19,4 @@
   <utility provides=".interfaces.IAsyncService"
       factory=".service.AsyncService" />
 
-  <browser:page
-    for="*"
-    name="kaka"
-    class=".testview.TestView"
-    permission="zope2.View"
-  />
-
 </configure>

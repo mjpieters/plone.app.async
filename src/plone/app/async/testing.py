@@ -1,3 +1,4 @@
+import time
 import transaction
 import Zope2
 from zope import component
@@ -48,8 +49,7 @@ def cleanUpQuotas():
     service = component.queryUtility(IAsyncService)
     if service is not None:
         queue = service.getQueues()['']
-        for quota in queue.quotas.values():
-            queue.quotas.create(quota.name, quota.size)
+        queue.quotas.remove('default')
 
 
 def cleanUpDispatcher():
@@ -68,6 +68,8 @@ class AsyncSandbox(ptc.Sandboxed):
         event = DatabaseOpened(async_db)
         threaded_dispatcher_installer.poll_interval = 0.2
         threaded_dispatcher_installer(event)
+        # Give some time to the dispatcher to do its job before commiting
+        time.sleep(0.1)
         transaction.commit()
         self._stuff = Zope2.bobo_application._stuff
         Zope2.bobo_application._stuff = (db,) + self._stuff[1:]

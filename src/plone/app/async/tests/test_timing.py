@@ -1,5 +1,6 @@
 import transaction
 from zc.async.testing import wait_for_result
+from plone.app.async.testing import wait_for_all_jobs
 from plone.app.async.tests.base import AsyncTestCase
 import time
 
@@ -74,6 +75,18 @@ class TestTiming(AsyncTestCase):
         transaction.commit()
         wait_for_result(j1, seconds=20)
         self.assertEquals(results, [2, 3, 1])
+
+    def test_wait_for_all_jobs(self):
+        """Tests if wait_for_all_jobs really works
+        """
+        results[:] = []
+        self.async.queueJob(job1, self.folder)
+        self.async.queueJob(job2, self.folder)
+        self.async.queueJob(job3, self.folder)
+        transaction.commit()
+        wait_for_all_jobs()
+        self.assertEquals(results, [1, 2, 3])
+
 
 def test_suite():
     from unittest import TestSuite, makeSuite

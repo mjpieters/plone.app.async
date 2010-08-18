@@ -1,4 +1,3 @@
-import transaction
 from zope.component import getUtility
 from Products.PloneTestCase import PloneTestCase
 from Products.Five.testbrowser import Browser
@@ -8,33 +7,17 @@ from plone.app.async.interfaces import IAsyncService
 PloneTestCase.setupPloneSite()
 
 
-def cleanUpQuotas():
-    """Reset quotas between tests.
-
-    'job never completed' errors may leave uncollectable jobs in quotas.
-    """
-    transaction.commit()
-    service = getUtility(IAsyncService)
-    queue = service.getQueues()['']
-    for quota in queue.quotas.values():
-        queue.quotas.create(quota.name, quota.size)
-
-
 class AsyncTestCase(AsyncSandbox, PloneTestCase.PloneTestCase):
     """We use this base class for all the tests in this package.
     """
     layer = async_layer
 
     def afterSetUp(self):
-        AsyncSandbox.afterSetUp(self)
+        super(AsyncTestCase, self).afterSetUp()
         self.async = getUtility(IAsyncService)
 
-    def beforeTearDown(self):
-        cleanUpQuotas()
-        AsyncSandbox.beforeTearDown(self)
 
-
-class FunctionalAsyncTestCase(AsyncTestCase):
+class FunctionalAsyncTestCase(AsyncTestCase, PloneTestCase.Functional): # Make ZTC happy
     """For functional tests.
     """
     layer = async_layer

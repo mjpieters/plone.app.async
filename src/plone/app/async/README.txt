@@ -33,7 +33,6 @@ Make sure that the dispatcher sees the same db:
     >>> disp_db == str(self.folder._p_jar.db())
     True
 
-
 Let's define a simple function to be executed asynchronously:
 
     >>> def addNumbers(context, x1, x2):

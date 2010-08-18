@@ -15,8 +15,6 @@ class TestSetup(AsyncTestCase):
     """
 
     def test_async_db_present(self):
-        """
-        """
         self.failUnless(queryUtility(IAsyncDatabase) is not None)
 
     def test_dispatcher_present(self):
@@ -25,13 +23,17 @@ class TestSetup(AsyncTestCase):
     def test_queues_present(self):
         self.failUnless(self.async.getQueues() is not None)
 
+    def test_quotas_present(self):
+        self.failUnless(self.async.getQueues()[''].quotas.get('default') is not None)
+
     def test_same_db(self):
-        """ Tests whethere the dispatcher sees the same db.
+        """Tests whether the dispatcher sees the same db.
         """
         job = self.async.queueJob(dbUsed, self.folder)
         transaction.commit()
         wait_for_result(job)
         self.assertEqual(job.result, str(self.app._p_jar.db()))
+
 
 def test_suite():
     from unittest import TestSuite, makeSuite

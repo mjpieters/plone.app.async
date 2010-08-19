@@ -92,3 +92,5 @@ def wait_for_all_jobs(seconds=6, assert_successful=True):
         wait_for_result(job, seconds)
         if assert_successful:
             assert not isinstance(job.result, Failure), str(job.result)
+    # Sync the db
+    transaction.commit()

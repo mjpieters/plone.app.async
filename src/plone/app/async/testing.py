@@ -1,6 +1,8 @@
 import time
 import transaction
 import Zope2
+import uuid
+import datetime
 from zope import component
 from zope.app.appsetup.interfaces import DatabaseOpened
 from Products.Five import zcml
@@ -8,6 +10,7 @@ from Products.Five import fiveconfigure
 from zc.async import dispatcher
 from zc.async.subscribers import queue_installer,\
     threaded_dispatcher_installer, agent_installer
+from zc.async.subscribers import ThreadedDispatcherInstaller
 from zc.twist import Failure
 from zc.async.interfaces import IDispatcherActivated
 from zc.async.testing import wait_for_result
@@ -33,9 +36,12 @@ class AsyncLayer(BasePTCLayer):
         component.provideHandler(configureQueue, [IQueueReady])
         event = DatabaseOpened(async_db)
         queue_installer(event)
+        self.dispatcher_uuid = uuid.uuid1()
+        ThreadedDispatcherInstaller(uuid=self.dispatcher_uuid, poll_interval=0.2)(event)
 
     def beforeTearDown(self):
         async_db = self.app._p_jar.db()
+        cleanUpDispatcher(self.dispatcher_uuid)
         gsm = component.getGlobalSiteManager()
         gsm.unregisterUtility(async_db, IAsyncDatabase)
         gsm.unregisterHandler(agent_installer, [IDispatcherActivated])
@@ -52,8 +58,8 @@ def cleanUpQuotas():
         queue.quotas.remove('default')
 
 
-def cleanUpDispatcher():
-    dispatcher_object = dispatcher.get()
+def cleanUpDispatcher(uuid=None):
+    dispatcher_object = dispatcher.get(uuid)
     if dispatcher_object is not None:
         tear_down_dispatcher(dispatcher_object)
         dispatcher.pop(dispatcher_object.UUID)
@@ -62,6 +68,8 @@ def cleanUpDispatcher():
 class AsyncSandbox(ptc.Sandboxed):
 
     def afterSetUp(self):
+        dispatcher.get(self.layer.dispatcher_uuid).activated = None
+
         db = async_db = self.app._p_jar.db()
         component.provideUtility(async_db, IAsyncDatabase)
         cleanUpDispatcher()
@@ -82,6 +90,8 @@ class AsyncSandbox(ptc.Sandboxed):
         gsm = component.getGlobalSiteManager()
         gsm.unregisterUtility(async_db, IAsyncDatabase)
         Zope2.bobo_application._stuff = self._stuff
+
+        dispatcher.get(self.layer.dispatcher_uuid).activated = datetime.datetime.now()
 
 
 def wait_for_all_jobs(seconds=6, assert_successful=True):

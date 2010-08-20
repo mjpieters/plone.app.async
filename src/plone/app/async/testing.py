@@ -20,6 +20,8 @@ from collective.testcaselayer.ptc import BasePTCLayer, ptc_layer
 from plone.app.async.interfaces import IAsyncDatabase, IQueueReady, IAsyncService
 from plone.app.async.subscribers import notifyQueueReady, configureQueue
 
+_dispatcher_uuid = uuid.uuid1()
+
 
 class AsyncLayer(BasePTCLayer):
 
@@ -36,12 +38,11 @@ class AsyncLayer(BasePTCLayer):
         component.provideHandler(configureQueue, [IQueueReady])
         event = DatabaseOpened(async_db)
         queue_installer(event)
-        self.dispatcher_uuid = uuid.uuid1()
-        ThreadedDispatcherInstaller(uuid=self.dispatcher_uuid, poll_interval=0.2)(event)
+        ThreadedDispatcherInstaller(uuid=_dispatcher_uuid, poll_interval=0.2)(event)
 
     def beforeTearDown(self):
+        cleanUpDispatcher(_dispatcher_uuid)
         async_db = self.app._p_jar.db()
-        cleanUpDispatcher(self.dispatcher_uuid)
         gsm = component.getGlobalSiteManager()
         gsm.unregisterUtility(async_db, IAsyncDatabase)
         gsm.unregisterHandler(agent_installer, [IDispatcherActivated])
@@ -68,8 +69,7 @@ def cleanUpDispatcher(uuid=None):
 class AsyncSandbox(ptc.Sandboxed):
 
     def afterSetUp(self):
-        dispatcher.get(self.layer.dispatcher_uuid).activated = None
-
+        dispatcher.get(_dispatcher_uuid).activated = None
         db = async_db = self.app._p_jar.db()
         component.provideUtility(async_db, IAsyncDatabase)
         cleanUpDispatcher()
@@ -90,8 +90,7 @@ class AsyncSandbox(ptc.Sandboxed):
         gsm = component.getGlobalSiteManager()
         gsm.unregisterUtility(async_db, IAsyncDatabase)
         Zope2.bobo_application._stuff = self._stuff
-
-        dispatcher.get(self.layer.dispatcher_uuid).activated = datetime.datetime.now()
+        dispatcher.get(_dispatcher_uuid).activated = datetime.datetime.now()
 
 
 def wait_for_all_jobs(seconds=6, assert_successful=True):

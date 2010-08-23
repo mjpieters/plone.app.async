@@ -2,14 +2,12 @@ import time
 import transaction
 import Zope2
 import uuid
-import datetime
 from zope import component
 from zope.app.appsetup.interfaces import DatabaseOpened
 from Products.Five import zcml
 from Products.Five import fiveconfigure
 from zc.async import dispatcher
-from zc.async.subscribers import queue_installer,\
-    threaded_dispatcher_installer, agent_installer
+from zc.async.subscribers import queue_installer, agent_installer
 from zc.async.subscribers import ThreadedDispatcherInstaller
 from zc.twist import Failure
 from zc.async.interfaces import IDispatcherActivated
@@ -21,35 +19,7 @@ from plone.app.async.interfaces import IAsyncDatabase, IQueueReady, IAsyncServic
 from plone.app.async.subscribers import notifyQueueReady, configureQueue
 
 _dispatcher_uuid = uuid.uuid1()
-
-
-class AsyncLayer(BasePTCLayer):
-
-    def afterSetUp(self):
-        fiveconfigure.debug_mode = True
-        import plone.app.async
-        zcml.load_config('configure.zcml', plone.app.async)
-        fiveconfigure.debug_mode = False
-
-        async_db = self.app._p_jar.db()
-        component.provideUtility(async_db, IAsyncDatabase)
-        component.provideHandler(agent_installer, [IDispatcherActivated])
-        component.provideHandler(notifyQueueReady, [IDispatcherActivated])
-        component.provideHandler(configureQueue, [IQueueReady])
-        event = DatabaseOpened(async_db)
-        queue_installer(event)
-        ThreadedDispatcherInstaller(uuid=_dispatcher_uuid, poll_interval=0.2)(event)
-
-    def beforeTearDown(self):
-        cleanUpDispatcher(_dispatcher_uuid)
-        async_db = self.app._p_jar.db()
-        gsm = component.getGlobalSiteManager()
-        gsm.unregisterUtility(async_db, IAsyncDatabase)
-        gsm.unregisterHandler(agent_installer, [IDispatcherActivated])
-        gsm.unregisterHandler(notifyQueueReady, [IDispatcherActivated])
-        gsm.unregisterHandler(configureQueue, [IQueueReady])
-
-async_layer = AsyncLayer(bases=[ptc_layer])
+_async_layer_db = None
 
 
 def cleanUpQuotas():
@@ -66,18 +36,52 @@ def cleanUpDispatcher(uuid=None):
         dispatcher.pop(dispatcher_object.UUID)
 
 
+def setUpDispatcher(db, uuid=None):
+    event = DatabaseOpened(db)
+    ThreadedDispatcherInstaller(poll_interval=0.1, uuid=uuid)(event)
+    time.sleep(0.2)
+
+
+class AsyncLayer(BasePTCLayer):
+
+    def afterSetUp(self):
+        fiveconfigure.debug_mode = True
+        import plone.app.async
+        zcml.load_config('configure.zcml', plone.app.async)
+        fiveconfigure.debug_mode = False
+        global _async_layer_db
+        async_db = _async_layer_db = self.app._p_jar.db()
+        component.provideUtility(async_db, IAsyncDatabase)
+        component.provideHandler(agent_installer, [IDispatcherActivated])
+        component.provideHandler(notifyQueueReady, [IDispatcherActivated])
+        component.provideHandler(configureQueue, [IQueueReady])
+        event = DatabaseOpened(async_db)
+        queue_installer(event)
+        setUpDispatcher(async_db, _dispatcher_uuid)
+        transaction.commit()
+
+    def beforeTearDown(self):
+        cleanUpDispatcher(_dispatcher_uuid)
+        async_db = self.app._p_jar.db()
+        gsm = component.getGlobalSiteManager()
+        gsm.unregisterUtility(async_db, IAsyncDatabase)
+        gsm.unregisterHandler(agent_installer, [IDispatcherActivated])
+        gsm.unregisterHandler(notifyQueueReady, [IDispatcherActivated])
+        gsm.unregisterHandler(configureQueue, [IQueueReady])
+
+async_layer = AsyncLayer(bases=[ptc_layer])
+
+
 class AsyncSandbox(ptc.Sandboxed):
 
     def afterSetUp(self):
-        dispatcher.get(_dispatcher_uuid).activated = None
+        # The commented should work, but it does not. Would remove all the
+        # additional threads.
+        #dispatcher.get(_dispatcher_uuid).activated = False
+        cleanUpDispatcher(_dispatcher_uuid)
         db = async_db = self.app._p_jar.db()
         component.provideUtility(async_db, IAsyncDatabase)
-        cleanUpDispatcher()
-        event = DatabaseOpened(async_db)
-        threaded_dispatcher_installer.poll_interval = 0.2
-        threaded_dispatcher_installer(event)
-        # Give some time to the dispatcher to do its job before committing
-        time.sleep(0.1)
+        setUpDispatcher(async_db)
         transaction.commit()
         self._stuff = Zope2.bobo_application._stuff
         Zope2.bobo_application._stuff = (db,) + self._stuff[1:]
@@ -85,12 +89,11 @@ class AsyncSandbox(ptc.Sandboxed):
     def beforeTearDown(self):
         cleanUpQuotas()
         cleanUpDispatcher()
+        component.provideUtility(_async_layer_db, IAsyncDatabase)
+        setUpDispatcher(_async_layer_db, _dispatcher_uuid)
+        #dispatcher.get(_dispatcher_uuid).activate()
         transaction.commit()
-        async_db = self.app._p_jar.db()
-        gsm = component.getGlobalSiteManager()
-        gsm.unregisterUtility(async_db, IAsyncDatabase)
         Zope2.bobo_application._stuff = self._stuff
-        dispatcher.get(_dispatcher_uuid).activated = datetime.datetime.now()
 
 
 def wait_for_all_jobs(seconds=6, assert_successful=True):

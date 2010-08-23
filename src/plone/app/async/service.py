@@ -2,6 +2,7 @@ from zope.component import getUtility
 from zope.interface import implements
 from zope.event import notify
 from zope.app.component.hooks import setSite
+from Acquisition import aq_inner, aq_parent
 from zExceptions import BadRequest
 from AccessControl.SecurityManagement import noSecurityManager,\
     newSecurityManager
@@ -35,7 +36,12 @@ def _executeAsUser(portal_path, context_path, user_id, func, *args, **kwargs):
         acl_users = getToolByName(portal, 'acl_users')
         user = acl_users.getUserById(user_id)
         if user is None:
-            raise BadRequest('User %s not found' % user_id)
+            # Try with zope users maybe...
+            root = aq_parent(aq_inner(portal))
+            acl_users = root.acl_users
+            user = acl_users.getUserById(user_id)
+            if user is None:
+                raise BadRequest('User %s not found' % user_id)
         if not hasattr(user, 'aq_base'):
             user = user.__of__(acl_users)
         newSecurityManager(None, user)

@@ -98,6 +98,7 @@ class AsyncSandbox(ptc.Sandboxed):
 
 def wait_for_all_jobs(seconds=6, assert_successful=True):
     """Wait for all jobs in the queue to complete"""
+    transaction.begin()
     service = component.getUtility(IAsyncService)
     queue = service.getQueues()['']
     for job in queue:

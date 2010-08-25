@@ -17,15 +17,6 @@ class AsyncTestCase(AsyncSandbox, PloneTestCase.PloneTestCase):
         self.async = getUtility(IAsyncService)
 
 
-class AsyncBareTestCase(PloneTestCase.PloneTestCase):
-
-    layer = async_layer
-
-    def afterSetUp(self):
-        super(AsyncBareTestCase, self).afterSetUp()
-        self.async = getUtility(IAsyncService)
-
-
 class FunctionalAsyncTestCase(AsyncTestCase, PloneTestCase.Functional): # Make ZTC happy
     """For functional tests.
     """

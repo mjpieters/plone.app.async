@@ -65,7 +65,7 @@ class AsyncLayer(BasePTCLayer):
         setUpDispatcher(_async_layer_db, _dispatcher_uuid)
         transaction.commit()
 
-    def beforeTearDown(self):
+    def afterClear(self):
         cleanUpDispatcher(_dispatcher_uuid)
         gsm = component.getGlobalSiteManager()
         gsm.unregisterUtility(_async_layer_db, IAsyncDatabase)
@@ -88,10 +88,10 @@ class AsyncSandbox(ptc.Sandboxed):
 
     def beforeTearDown(self):
         cleanUpQuotas()
-        cleanUpDispatcher()
         transaction.commit()
 
     def afterClear(self):
+        cleanUpDispatcher()
         component.provideUtility(_async_layer_db, IAsyncDatabase)
         if hasattr(self, '_stuff'):
             Zope2.bobo_application._stuff = self._stuff
@@ -106,3 +106,4 @@ def wait_for_all_jobs(seconds=6, assert_successful=True):
         wait_for_result(job, seconds)
         if assert_successful:
             assert not isinstance(job.result, Failure), str(job.result)
+    transaction.commit()

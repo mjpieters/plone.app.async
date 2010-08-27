@@ -11,11 +11,7 @@
   <include package="zc.z3monitor" />
   <include package="zc.async" file="dispatcher.zcml" />
 
-  <adapter factory="zc.async.queue.getDefaultQueue" />
-
-  <!-- default configuration -->
-  <utility factory=".config.InitBase" />
-
+  <!-- async service -->
   <utility provides=".interfaces.IAsyncService"
       factory=".service.AsyncService" />
 

@@ -1,3 +1,5 @@
+import Zope2
+from threading import local
 from zope.component import getUtility
 from zope.interface import implements
 from zope.event import notify
@@ -10,7 +12,8 @@ from Products.CMFCore.interfaces import ISiteRoot
 from Products.CMFCore.utils import getToolByName
 from zc.async.interfaces import KEY
 from zc.async.job import serial, parallel, Job
-from plone.app.async.interfaces import IAsyncService, JobSuccess, JobFailure
+from plone.app.async.interfaces import IAsyncDatabase, IAsyncService
+from plone.app.async.interfaces import JobSuccess, JobFailure
 
 
 def makeJob(func, context, *args, **kwargs):
@@ -19,44 +22,41 @@ def makeJob(func, context, *args, **kwargs):
 
 
 def _executeAsUser(portal_path, context_path, user_id, func, *args, **kwargs):
-    import Zope2
     transaction = Zope2.zpublisher_transactions_manager # Supports isDoomed
-
     transaction.begin()
     app = Zope2.app()
-    success = False
     result = None
     try:
-        portal = app.unrestrictedTraverse(portal_path, None)
-        if portal is None:
-            raise BadRequest(
-                'Portal path %s not found' % '/'.join(portal_path))
-        setSite(portal)
+        try:
+            portal = app.unrestrictedTraverse(portal_path, None)
+            if portal is None:
+                raise BadRequest(
+                    'Portal path %s not found' % '/'.join(portal_path))
+            setSite(portal)
 
-        acl_users = getToolByName(portal, 'acl_users')
-        user = acl_users.getUserById(user_id)
-        if user is None:
-            # Try with zope users maybe...
-            root = aq_parent(aq_inner(portal))
-            acl_users = root.acl_users
+            acl_users = getToolByName(portal, 'acl_users')
             user = acl_users.getUserById(user_id)
             if user is None:
-                raise BadRequest('User %s not found' % user_id)
-        if not hasattr(user, 'aq_base'):
-            user = user.__of__(acl_users)
-        newSecurityManager(None, user)
+                # Try with zope users maybe...
+                root = aq_parent(aq_inner(portal))
+                acl_users = root.acl_users
+                user = acl_users.getUserById(user_id)
+                if user is None:
+                    raise BadRequest('User %s not found' % user_id)
+            if not hasattr(user, 'aq_base'):
+                user = user.__of__(acl_users)
+            newSecurityManager(None, user)
 
-        context = portal.unrestrictedTraverse(context_path, None)
-        if context is None:
-            raise BadRequest(
-                'Context path %s not found' % '/'.join(context_path))
-        result = func(context, *args, **kwargs)
-        transaction.commit()
-        success = True
-
-    finally:
-        if not success:
+            context = portal.unrestrictedTraverse(context_path, None)
+            if context is None:
+                raise BadRequest(
+                    'Context path %s not found' % '/'.join(context_path))
+            result = func(context, *args, **kwargs)
+            transaction.commit()
+        except:
             transaction.abort()
+            raise
+    finally:
         noSecurityManager()
         setSite(None)
         app._p_jar.close()
@@ -73,17 +73,27 @@ def job_failure_callback(result):
     notify(ev)
 
 
-class AsyncService(object):
+class AsyncService(local):
     implements(IAsyncService)
 
+    def __init__(self):
+        self._db = None
+        self._conn = None
+
     def getQueues(self):
-        portal = getUtility(ISiteRoot)
-        return portal._p_jar.root()[KEY]
+        db = getUtility(IAsyncDatabase)
+        if self._db is not db:
+            self._db = db
+            conn = getUtility(ISiteRoot)._p_jar
+            self._conn = conn.get_connection(db.database_name)
+            self._conn.onCloseCallback(self.__init__)
+        return self._conn.root()[KEY]
 
     def queueJobInQueue(self, queue, quota_names, func, context, *args, **kwargs):
-        pm = getToolByName(context, 'portal_membership')
+        portal = getUtility(ISiteRoot)
+        portal_path = portal.getPhysicalPath()
+        pm = getToolByName(portal, 'portal_membership')
         user_id = pm.getAuthenticatedMember().getId()
-        portal_path = getUtility(ISiteRoot).getPhysicalPath()
         context_path = context.getPhysicalPath()
         job = Job(_executeAsUser, portal_path, context_path, user_id,
                   func, *args, **kwargs)

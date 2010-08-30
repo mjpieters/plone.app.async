@@ -1,6 +1,6 @@
 <configure xmlns="http://namespaces.zope.org/zope">
 
-  <utility factory=".config.InitMultiDB" />
+  <utility factory=".config.InitSingleDBWorker" />
 
   <subscriber
     for="zc.async.interfaces.IDispatcherActivated"

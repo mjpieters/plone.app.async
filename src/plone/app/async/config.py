@@ -15,7 +15,35 @@ from plone.app.async.interfaces import IInitAsync, IAsyncDatabase
 logger = logging.getLogger('plone.app.async')
 
 
-class InitBase(object):
+class InitInstance(object):
+
+    interface.implements(IInitAsync)
+
+    db_name = None
+
+    def init(self):
+        component.provideUtility(Zope2.DB, IDatabase)
+
+        configuration = getConfiguration()
+        for name in configuration.dbtab.listDatabaseNames():
+            db = configuration.dbtab.getDatabase(name=name)
+            component.provideUtility(db, IDatabase, name=name)
+
+        db = configuration.dbtab.getDatabase(name=self.db_name)
+        component.provideUtility(db, IAsyncDatabase)
+
+
+class InitSingleDBInstance(InitInstance):
+
+    db_name = 'main'
+
+
+class InitMultiDBInstance(InitInstance):
+
+    db_name = 'async'
+
+
+class InitWorker(object):
     interface.implements(IInitAsync)
 
     db_name = None
@@ -43,11 +71,13 @@ class InitBase(object):
             zc.monitor.start(int(config['port']))
 
 
-class InitSingleDB(InitBase):
+class InitSingleDBWorker(InitWorker):
+
     db_name = 'main'
 
 
-class InitMultiDB(InitBase):
+class InitMultiDBWorker(InitWorker):
+
     db_name = 'async'
 
 

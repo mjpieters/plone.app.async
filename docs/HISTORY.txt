@@ -1,9 +1,10 @@
 Changelog
 =========
 
-1.0a2 - Unreleased
+1.0a2 - 2010-08-30
 ------------------
 
+- Made separate zcml configurations for single/multi and instance/worker.
 
 1.0a1 - 2010-08-25
 ------------------

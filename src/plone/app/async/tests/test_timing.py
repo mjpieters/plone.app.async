@@ -1,6 +1,6 @@
 import transaction
 from zc.async.testing import wait_for_result
-from plone.app.async.testing import wait_for_all_jobs
+from plone.app.async.utils import wait_for_all_jobs
 from plone.app.async.tests.base import AsyncTestCase
 import time
 

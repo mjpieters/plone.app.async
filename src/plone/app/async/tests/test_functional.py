@@ -1,7 +1,7 @@
 from zope.interface import Interface, implements
 from zope.component import getUtility
 from zope.formlib import form
-from plone.app.async.testing import wait_for_all_jobs
+from plone.app.async.utils import wait_for_all_jobs
 from plone.app.form.interfaces import IPlonePageForm
 from Products.Five import zcml
 from Products.Five.formlib import formbase

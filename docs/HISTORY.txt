@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.0a3 - Unreleased
+------------------
+
+- Separate helper function from test setup so it can be used in non-test code.
+
 1.0a2 - 2010-08-30
 ------------------
 

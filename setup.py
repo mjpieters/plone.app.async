@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import os
 
 name = 'plone.app.async'
-version = '1.0a3'
+version = '1.0a4'
 user_doc = open(
     os.path.join("src", "plone", "app", "async", "README.txt")).read()
 

@@ -15,7 +15,7 @@ def dbUsed(context):
 class TestCaseSetup(AsyncTestCase):
 
     def test_async_db(self):
-        self.assertEqual(queryUtility(IAsyncDatabase), self.app._p_jar.db())
+        self.failIfEqual(queryUtility(IAsyncDatabase), None)
 
     def test_dispatcher_present(self):
         self.failUnless(dispatcher.get() is not None)
@@ -26,9 +26,7 @@ class TestCaseSetup(AsyncTestCase):
     def test_quotas_present(self):
         self.failUnless(self.async.getQueues()[''].quotas.get('default') is not None)
 
-    def test_same_db(self):
-        """Tests whether the dispatcher sees the same db.
-        """
+    def test_job_sees_main_db(self):
         job = self.async.queueJob(dbUsed, self.folder)
         transaction.commit()
         wait_for_result(job)
@@ -43,7 +41,7 @@ class TestLayerSetup(ptc.PloneTestCase):
         self.async = getUtility(IAsyncService)
 
     def test_async_db(self):
-        self.assertEqual(queryUtility(IAsyncDatabase), self.app._p_jar.db())
+        self.failIfEqual(queryUtility(IAsyncDatabase), None)
 
     def test_dispatcher_present(self):
         self.failUnless(dispatcher.get(_dispatcher_uuid) is not None)
@@ -54,9 +52,7 @@ class TestLayerSetup(ptc.PloneTestCase):
     def test_quotas_present(self):
         self.failUnless(self.async.getQueues()[''].quotas.get('default') is not None)
 
-    def test_same_db(self):
-        """Tests whether the dispatcher sees the same db.
-        """
+    def test_job_sees_main_db(self):
         job = self.async.queueJob(dbUsed, self.folder)
         transaction.commit()
         wait_for_result(job)

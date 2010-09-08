@@ -8,7 +8,7 @@ user_doc = open(
 
 setup(name=name,
       version=version,
-      description="Integration package for zc.async",
+      description="Integration package for zc.async allowing asynchronous operations in Plone.",
       long_description=open("README.txt").read() + "\n" +
                        user_doc + "\n" +
                        open(os.path.join("docs", "HISTORY.txt")).read(),

@@ -95,3 +95,23 @@ class AsyncSandbox(ptc.Sandboxed):
         component.provideUtility(_async_layer_db, IAsyncDatabase)
         if hasattr(self, '_stuff'):
             Zope2.bobo_application._stuff = self._stuff
+
+
+def patch_zodb_open():
+    """We want to make sure that testcase layer can create new sandboxes
+    at will.
+    """
+    DB.old_open = DB.open
+
+    def open(self, version='', transaction_manager=None):
+        conn = DB.old_open(self, version, transaction_manager)
+        db = conn.db()
+        if _async_layer_db is not None and \
+            db.database_name == 'unnamed' and \
+            'async' not in db.databases:
+            db.databases['async'] = _async_layer_db
+            _async_layer_db.databases['unnamed'] = db
+        return conn
+    DB.open = open
+
+patch_zodb_open()

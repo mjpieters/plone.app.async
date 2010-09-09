@@ -1,18 +1,14 @@
 from setuptools import setup, find_packages
-import os
+from os.path import join
 
-name = 'plone.app.async'
 version = '1.0a4'
-user_doc = open(
-    os.path.join("src", "plone", "app", "async", "README.txt")).read()
 
-setup(name=name,
+setup(name='plone.app.async',
       version=version,
-      description="Integration package for zc.async allowing asynchronous operations in Plone.",
+      description="Integration package for zc.async allowing asynchronous operations in Plone",
       long_description=open("README.txt").read() + "\n" +
-                       user_doc + "\n" +
-                       open(os.path.join("docs", "HISTORY.txt")).read(),
-      # Get more strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
+          open(join("src", "plone", "app", "async", "README.txt")).read() + "\n" +
+          open(join("docs", "HISTORY.txt")).read(),
       classifiers=[
           'Environment :: Web Environment',
           'Framework :: Plone',
@@ -21,18 +17,18 @@ setup(name=name,
           'Operating System :: OS Independent',
           'Programming Language :: Python',
           'Topic :: Software Development :: Libraries :: Python Modules',
-        ],
-      keywords='plone, async, asynchronous',
+      ],
+      keywords='plone async asynchronous',
       author='Plone Foundation',
       author_email='plone-developers@lists.sourceforge.net',
       url='http://plone.org/products/plone.app.async',
-      download_url = 'http://pypi.python.org/pypi/plone.app.async/',
+      download_url='http://pypi.python.org/pypi/plone.app.async',
       license='GPL version 2',
       packages=find_packages('src'),
-      package_dir = {'': 'src'},
+      package_dir={'': 'src'},
       namespace_packages=['plone', 'plone.app'],
       include_package_data=True,
-      platforms = 'Any',
+      platforms='Any',
       zip_safe=False,
       install_requires=[
           'setuptools',
@@ -40,10 +36,8 @@ setup(name=name,
           'zc.monitor',
           'zc.z3monitor',
           'collective.testcaselayer'
-          # -*- Extra requirements: -*-
       ],
-      entry_points="""
-      [z3c.autoinclude.plugin]
-      target = plone
-      """,
-      )
+      entry_points={
+          'z3c.autoinclude.plugin': 'target=plone',
+      },
+)

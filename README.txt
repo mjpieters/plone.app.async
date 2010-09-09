@@ -1,13 +1,14 @@
+===============
 plone.app.async
 ===============
 
 Introduction
-------------
+============
 
 This package provides `zc.async`_  integration to plone for performing asynchronous job operations.
 
 Installation
-------------
+============
 You will be typically running plone.app.async in a ZEO environment where you will be having one or more *worker* instances that will be acting as dispatchers polling and carrying out jobs queued by your main zope instances.
 For the sake of simplicity it is assumed that you have one instance that can queue new jobs, and one worker instance that consumes them both operating on a single database. In this case, your buildout configuration will look similar to::
 
@@ -47,11 +48,11 @@ There are two important stanzas above:
 For more details please look at the buildout configuration included in the package.
 
 Credits
--------
+=======
 Enfold's `plone.core.async`_ package has been extensively used for setting up the queues and Zope Control Panel integration.
 
 References
-----------
+==========
 * `zc.async`_ at pypi
 * `plone.core.async`_ svn repository
 

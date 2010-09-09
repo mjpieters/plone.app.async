@@ -1,7 +1,7 @@
 Changelog
 =========
 
-1.0a4 - Unreleased
+1.0a4 - 2010-09-09
 ------------------
 
 - Use multi-db setup in tests to keep testcaselayer working as expected.

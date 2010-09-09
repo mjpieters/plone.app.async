@@ -52,11 +52,11 @@ def cleanUpDispatcher(uuid=None):
 class AsyncLayer(BasePTCLayer):
 
     def afterSetUp(self):
+        global _async_layer_db
         fiveconfigure.debug_mode = True
         import plone.app.async
         zcml.load_config('configure.zcml', plone.app.async)
         fiveconfigure.debug_mode = False
-        global _async_layer_db
         main_db = self.app._p_jar.db()
         _async_layer_db = createAsyncDB(main_db)
         component.provideUtility(_async_layer_db, IAsyncDatabase)
@@ -68,12 +68,14 @@ class AsyncLayer(BasePTCLayer):
         transaction.commit()
 
     def afterClear(self):
+        global _async_layer_db
         cleanUpDispatcher(_dispatcher_uuid)
         gsm = component.getGlobalSiteManager()
         gsm.unregisterUtility(_async_layer_db, IAsyncDatabase)
         gsm.unregisterHandler(agent_installer, [IDispatcherActivated])
         gsm.unregisterHandler(notifyQueueReady, [IDispatcherActivated])
         gsm.unregisterHandler(configureQueue, [IQueueReady])
+        _async_layer_db = None
 
 async_layer = AsyncLayer(bases=[ptc_layer])
 
@@ -97,21 +99,16 @@ class AsyncSandbox(ptc.Sandboxed):
             Zope2.bobo_application._stuff = self._stuff
 
 
-def patch_zodb_open():
-    """We want to make sure that testcase layer can create new sandboxes
-    at will.
-    """
-    DB.old_open = DB.open
+# We want to make sure that testcaselayer can create new
+# sandboxes at will:
 
-    def open(self, version='', transaction_manager=None):
-        conn = DB.old_open(self, version, transaction_manager)
-        db = conn.db()
-        if _async_layer_db is not None and \
-            db.database_name == 'unnamed' and \
-            'async' not in db.databases:
-            db.databases['async'] = _async_layer_db
-            _async_layer_db.databases['unnamed'] = db
-        return conn
-    DB.open = open
+def __init__(self, *args, **kw):
+    DB._old_init(self, *args, **kw)
+    if (_async_layer_db is not None and
+        self.database_name == 'unnamed' and
+        'async' not in self.databases):
+        _async_layer_db.databases['unnamed'] = self # Fake dbtab
+        self.databases['async'] = _async_layer_db   # Fake dbtab
 
-patch_zodb_open()
+DB._old_init = DB.__init__
+DB.__init__ = __init__

@@ -12,7 +12,7 @@ def successJob(context):
     return "Success"
 
 
-def failureJob(context):
+def failingJob(context):
     raise RuntimeError("FooBar")
 
 
@@ -46,7 +46,7 @@ class TestResultHandler(AsyncTestCase):
 
     def test_failure(self):
         events[:] = []
-        job = self.async.queueJob(failureJob, self.folder)
+        job = self.async.queueJob(failingJob, self.folder)
         transaction.commit()
         wait_for_result(job)
         result = events[0].object

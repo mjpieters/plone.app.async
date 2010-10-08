@@ -127,7 +127,7 @@ the same roles and permissions. So for instance:
     ...     'foo', 'title', 'description', 'body')
     >>> transaction.commit()
 
-will fail as the user is not allowed to create content in the plone root.
+will fail as the user is not allowed to create content in the Plone root.
 
     >>> wait_for_result(job)
     <zc.twist.Failure AccessControl.unauthorized.Unauthorized>

@@ -181,3 +181,10 @@ want to send an email upon failures) by subscribing to the relevant events:
     >>> r = wait_for_result(job2)
     >>> results
     [42, 'exceptions.RuntimeError: FooBared']
+
+Let's clean up and unregister the success/failure handlers
+
+    >>> from zope.component import getGlobalSiteManager
+    >>> gsm = getGlobalSiteManager()
+    >>> _ = gsm.unregisterHandler(successHandler, [IJobSuccess])
+    >>> _ = gsm.unregisterHandler(failureHandler, [IJobFailure])

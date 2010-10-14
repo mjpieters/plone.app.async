@@ -21,7 +21,7 @@ def makeJob(func, context, *args, **kwargs):
     return (func, context, args, kwargs)
 
 
-def _executeAsUser(portal_path, context_path, user_id, func, *args, **kwargs):
+def _executeAsUser(portal_path, context_path, user_id, uf_path, func, *args, **kwargs):
     transaction = Zope2.zpublisher_transactions_manager # Supports isDoomed
     transaction.begin()
     app = Zope2.app()
@@ -34,15 +34,13 @@ def _executeAsUser(portal_path, context_path, user_id, func, *args, **kwargs):
                     'Portal path %s not found' % '/'.join(portal_path))
             setSite(portal)
 
-            acl_users = getToolByName(portal, 'acl_users')
+            acl_users = app.unrestrictedTraverse(uf_path, None)
+            if acl_users is None:
+                raise BadRequest(
+                    'Userfolder path %s not found' % '/'.join(uf_path))
             user = acl_users.getUserById(user_id)
             if user is None:
-                # Try with zope users maybe...
-                root = aq_parent(aq_inner(portal))
-                acl_users = root.acl_users
-                user = acl_users.getUserById(user_id)
-                if user is None:
-                    raise BadRequest('User %s not found' % user_id)
+                raise BadRequest('User %s not found' % user_id)
             if not hasattr(user, 'aq_base'):
                 user = user.__of__(acl_users)
             newSecurityManager(None, user)
@@ -93,9 +91,11 @@ class AsyncService(local):
         portal = getUtility(ISiteRoot)
         portal_path = portal.getPhysicalPath()
         pm = getToolByName(portal, 'portal_membership')
-        user_id = pm.getAuthenticatedMember().getId()
+        user = pm.getAuthenticatedMember()
+        user_id = user.getId()
+        uf_path = user.aq_parent.aq_parent.getPhysicalPath()
         context_path = context.getPhysicalPath()
-        job = Job(_executeAsUser, portal_path, context_path, user_id,
+        job = Job(_executeAsUser, portal_path, context_path, user_id, uf_path,
                   func, *args, **kwargs)
         if quota_names:
             job.quota_names = quota_names
@@ -112,12 +112,14 @@ class AsyncService(local):
         portal = getUtility(ISiteRoot)
         portal_path = portal.getPhysicalPath()
         pm = getToolByName(portal, 'portal_membership')
-        user_id = pm.getAuthenticatedMember().getId()
+        user = pm.getAuthenticatedMember()
+        user_id = user.getId()
+        uf_path = user.aq_parent.aq_parent.getPhysicalPath()
         scheduled = []
         for (func, context, args, kwargs) in job_infos:
             context_path = context.getPhysicalPath()
             job = Job(_executeAsUser, portal_path, context_path, user_id,
-                      func, *args, **kwargs)
+                      uf_path, func, *args, **kwargs)
             scheduled.append(job)
         if serialize:
             job = serial(*scheduled)

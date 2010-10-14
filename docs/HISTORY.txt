@@ -4,6 +4,9 @@ Changelog
 1.0a5 - Unreleased
 ------------------
 
+- Instead of guessing where a userid may be coming from, record the path
+  of the userfolder and use that to reinstate the user.
+  [mj]
 
 1.0a4 - 2010-09-09
 ------------------
